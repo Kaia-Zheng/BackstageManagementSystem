@@ -9,7 +9,7 @@
         <Fold/>
       </el-icon>
     </div>
-    <div class="logo">Admin3后台管理系统</div>
+    <div class="logo">天津仁爱学院社团管理系统</div>
     <div class="header-right">
       <div class="header-user-con">
         <!-- 消息中心 -->

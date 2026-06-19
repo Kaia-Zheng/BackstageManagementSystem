@@ -101,7 +101,7 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  document.title = `${to.meta.title} | Admin3后台管理系统`;
+  document.title = `${to.meta.title} | 天津仁爱学院社团管理系统`;
   const token = localStorage.getItem('token');
   const basicStore = useBasicStore();
   if (!token && to.path !== '/login') {

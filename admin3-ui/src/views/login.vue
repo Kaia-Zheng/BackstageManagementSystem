@@ -97,6 +97,17 @@ tags.clearTags();
   background-repeat: no-repeat;
 }
 
+.login-wrap::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 0;
+}
+
 .ms-title {
   width: 100%;
   line-height: 50px;
@@ -115,6 +126,7 @@ tags.clearTags();
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.3);
   overflow: hidden;
+  z-index: 1;
 }
 
 .ms-content {

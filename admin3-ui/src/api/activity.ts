@@ -3,12 +3,13 @@ import { BASE_URI } from './base';
 
 export type ActivityStatus = 'PENDING' | 'PUBLISHED' | 'ONGOING' | 'ENDED' | 'CANCELLED';
 
-export const ActivityStatusList: { value: ActivityStatus; label: string; color: string }[] = [
-  { value: 'PENDING', label: '待审核', color: '#faad14' },
-  { value: 'PUBLISHED', label: '已发布', color: '#1890ff' },
-  { value: 'ONGOING', label: '进行中', color: '#52c41a' },
-  { value: 'ENDED', label: '已结束', color: '#8c8c8c' },
-  { value: 'CANCELLED', label: '已取消', color: '#f5222d' }
+// 状态颜色优化：更直观的颜色
+export const ActivityStatusList: { value: ActivityStatus; label: string; color: string; type: string }[] = [
+  { value: 'PENDING', label: '待审核', color: '#909399', type: 'info' },
+  { value: 'PUBLISHED', label: '已发布', color: '#409eff', type: '' },
+  { value: 'ONGOING', label: '进行中', color: '#67c23a', type: 'success' },
+  { value: 'ENDED', label: '已结束', color: '#a980f5', type: 'warning' },
+  { value: 'CANCELLED', label: '已取消', color: '#f56c6c', type: 'danger' }
 ];
 
 export const ActivityStatusLabel = (s: ActivityStatus | string): string => {
@@ -19,6 +20,11 @@ export const ActivityStatusLabel = (s: ActivityStatus | string): string => {
 export const ActivityStatusColor = (s: ActivityStatus | string): string => {
   const found = ActivityStatusList.find(item => item.value === s);
   return found ? found.color : '#8c8c8c';
+};
+
+export const ActivityStatusType = (s: ActivityStatus | string): string => {
+  const found = ActivityStatusList.find(item => item.value === s);
+  return found ? found.type : 'info';
 };
 
 export interface Activity {
@@ -146,10 +152,51 @@ export function cancelRegistration(activityId: number) {
   });
 }
 
+export function getMyRegistration(activityId: number) {
+  return request({
+    url: `${BASE_URI}/activities/${activityId}/registrations/me`,
+    method: 'get'
+  });
+}
+
 export function getActivityRegistrations(activityId: number, data: { page: number; size: number }) {
   return request({
     url: `${BASE_URI}/activities/${activityId}/registrations`,
     method: 'get',
     params: data
   });
+}
+
+export function checkInRegistration(activityId: number, userId: number) {
+  return request({
+    url: `${BASE_URI}/activities/${activityId}/registrations/${userId}/check-in`,
+    method: 'post'
+  });
+}
+
+// 报名状态
+export type RegistrationStatus = 'REGISTERED' | 'CHECKED_IN' | 'CANCELLED';
+
+export const RegistrationStatusList: { value: RegistrationStatus; label: string; color: string; type: string }[] = [
+  { value: 'REGISTERED', label: '已报名', color: '#409eff', type: '' },
+  { value: 'CHECKED_IN', label: '已签到', color: '#67c23a', type: 'success' },
+  { value: 'CANCELLED', label: '已取消', color: '#909399', type: 'info' }
+];
+
+export const RegistrationStatusLabel = (s: RegistrationStatus | string): string => {
+  const found = RegistrationStatusList.find(item => item.value === s);
+  return found ? found.label : String(s);
+};
+
+export const RegistrationStatusColor = (s: RegistrationStatus | string): string => {
+  const found = RegistrationStatusList.find(item => item.value === s);
+  return found ? found.color : '#8c8c8c';
+};
+
+export interface Registration {
+  id: number;
+  activity: { id: number };
+  user: { id: number; username: string };
+  status: RegistrationStatus;
+  registerTime: string;
 }

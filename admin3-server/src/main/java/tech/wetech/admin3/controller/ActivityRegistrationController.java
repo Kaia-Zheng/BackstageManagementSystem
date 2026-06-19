@@ -52,4 +52,25 @@ public class ActivityRegistrationController {
     registrationService.cancelRegistration(activityId);
     return ResponseEntity.noContent().build();
   }
+
+  /**
+   * 获取当前用户对指定活动的报名状态
+   */
+  @GetMapping("/me")
+  public ResponseEntity<ActivityRegistration> getMyRegistration(@PathVariable Long activityId) {
+    ActivityRegistration registration = registrationService.getMyRegistration(activityId);
+    if (registration == null) {
+      return ResponseEntity.noContent().build();
+    }
+    return ResponseEntity.ok(registration);
+  }
+
+  /**
+   * 签到报名者（社团负责人/管理员）
+   */
+  @PostMapping("/{userId}/check-in")
+  @RequiresPermissions("activity:update")
+  public ResponseEntity<ActivityRegistration> checkIn(@PathVariable Long activityId, @PathVariable Long userId) {
+    return ResponseEntity.ok(registrationService.checkIn(activityId, userId));
+  }
 }

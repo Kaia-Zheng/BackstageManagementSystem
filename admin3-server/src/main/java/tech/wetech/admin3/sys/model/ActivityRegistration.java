@@ -37,7 +37,8 @@ public class ActivityRegistration extends BaseEntity {
 
   public enum RegisterStatus {
     REGISTERED,  // 已报名
-    CANCELLED     // 已取消
+    CHECKED_IN,  // 已签到
+    CANCELLED    // 已取消
   }
 
   public Activity getActivity() {

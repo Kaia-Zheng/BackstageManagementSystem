@@ -8,11 +8,14 @@ import tech.wetech.admin3.common.BusinessException;
 import tech.wetech.admin3.common.CommonResultStatus;
 import tech.wetech.admin3.common.Constants;
 import tech.wetech.admin3.common.SessionItemHolder;
+import tech.wetech.admin3.common.authz.PermissionHelper;
 import tech.wetech.admin3.sys.model.Activity;
 import tech.wetech.admin3.sys.model.ActivityRegistration;
+import tech.wetech.admin3.sys.model.Club;
 import tech.wetech.admin3.sys.model.User;
 import tech.wetech.admin3.sys.repository.ActivityRegistrationRepository;
 import tech.wetech.admin3.sys.repository.ActivityRepository;
+import tech.wetech.admin3.sys.repository.ClubRepository;
 import tech.wetech.admin3.sys.repository.UserRepository;
 import tech.wetech.admin3.sys.service.dto.PageDTO;
 import tech.wetech.admin3.sys.service.dto.UserinfoDTO;
@@ -27,13 +30,16 @@ public class ActivityRegistrationService {
 
   private final ActivityRegistrationRepository registrationRepository;
   private final ActivityRepository activityRepository;
+  private final ClubRepository clubRepository;
   private final UserRepository userRepository;
 
   public ActivityRegistrationService(ActivityRegistrationRepository registrationRepository,
-                                       ActivityRepository activityRepository,
-                                       UserRepository userRepository) {
+                                     ActivityRepository activityRepository,
+                                     ClubRepository clubRepository,
+                                     UserRepository userRepository) {
     this.registrationRepository = registrationRepository;
     this.activityRepository = activityRepository;
+    this.clubRepository = clubRepository;
     this.userRepository = userRepository;
   }
 
@@ -105,5 +111,55 @@ public class ActivityRegistrationService {
     Activity activity = activityRepository.findById(activityId).orElseThrow();
     activity.setCurrentParticipants((int) registrationRepository.countByActivityId(activityId));
     activityRepository.save(activity);
+  }
+
+  /**
+   * 签到报名者
+   * 仅活动所属社团负责人和管理员可操作
+   */
+  @Transactional
+  public ActivityRegistration checkIn(Long activityId, Long userId) {
+    checkManagePermission(activityId);
+    ActivityRegistration registration = registrationRepository.findByActivityIdAndUserId(activityId, userId)
+      .orElseThrow(() -> new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "该用户未报名此活动"));
+    if (registration.getStatus() == ActivityRegistration.RegisterStatus.CHECKED_IN) {
+      throw new BusinessException(CommonResultStatus.PARAM_ERROR, "该用户已签到");
+    }
+    if (registration.getStatus() == ActivityRegistration.RegisterStatus.CANCELLED) {
+      throw new BusinessException(CommonResultStatus.PARAM_ERROR, "该报名已取消，无法签到");
+    }
+    registration.setStatus(ActivityRegistration.RegisterStatus.CHECKED_IN);
+    return registrationRepository.save(registration);
+  }
+
+  /**
+   * 获取当前用户对指定活动的报名状态
+   */
+  public ActivityRegistration getMyRegistration(Long activityId) {
+    UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
+    if (currentUser == null) {
+      return null;
+    }
+    return registrationRepository.findByActivityIdAndUserId(activityId, currentUser.userId()).orElse(null);
+  }
+
+  private void checkManagePermission(Long activityId) {
+    UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
+    if (currentUser == null) {
+      throw new BusinessException(CommonResultStatus.UNAUTHORIZED);
+    }
+    // 检查是否是管理员
+    if (PermissionHelper.hasPermission(currentUser.permissions(), "activity:update")) {
+      return;
+    }
+    // 检查是否是社团负责人
+    Activity activity = activityRepository.findById(activityId).orElse(null);
+    if (activity != null && activity.getClub() != null) {
+      Club club = activity.getClub();
+      if (club.getOwner() != null && club.getOwner().getId().equals(currentUser.userId())) {
+        return;
+      }
+    }
+    throw new BusinessException(CommonResultStatus.FORBIDDEN, "没有权限管理此活动的报名");
   }
 }

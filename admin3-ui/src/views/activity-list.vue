@@ -15,33 +15,48 @@
 
     <el-table :data="tableData" border class="table" header-cell-class-name="table-header">
       <el-table-column prop="id" label="ID" width="70" align="center"></el-table-column>
-      <el-table-column prop="title" label="活动标题" min-width="160"></el-table-column>
-      <el-table-column prop="description" label="简介" min-width="180" show-overflow-tooltip></el-table-column>
+      <el-table-column prop="title" label="活动标题" min-width="160">
+        <template #default="{ row }">
+          <el-link type="primary" @click="goToDetail(row.id)">{{ row.title }}</el-link>
+        </template>
+      </el-table-column>
       <el-table-column prop="location" label="地点" width="110"></el-table-column>
-      <el-table-column prop="activityTime" label="活动时间" width="160"></el-table-column>
+      <el-table-column prop="activityTime" label="活动时间" width="160">
+        <template #default="{ row }">{{ formatTime(row.activityTime) }}</template>
+      </el-table-column>
       <el-table-column label="所属社团" width="130">
         <template #default="{ row }">{{ row.club?.name || '-' }}</template>
       </el-table-column>
-      <el-table-column label="状态" width="90" align="center">
+      <el-table-column label="状态" width="100" align="center">
         <template #default="{ row }">
-          <el-tag :color="ActivityStatusColor(row.status)" style="color: white">{{ ActivityStatusLabel(row.status) }}</el-tag>
+          <el-tag :type="ActivityStatusType(row.status)" effect="dark" round>
+            {{ ActivityStatusLabel(row.status) }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="maxParticipants" label="最大人数" width="90" align="center"></el-table-column>
       <el-table-column prop="currentParticipants" label="已报名" width="80" align="center"></el-table-column>
-      <el-table-column label="操作" width="260" align="center" fixed="right">
+      <el-table-column label="操作" width="320" align="center" fixed="right">
         <template #default="{ row }">
+          <!-- 审核状态 -->
           <template v-if="row.status === 'PENDING'">
-            <el-button type="success" link size="small" @click="handleApprove(row)" v-action:activity:audit>审核通过</el-button>
-            <el-button type="danger" link size="small" @click="handleReject(row)" v-action:activity:audit>审核不通过</el-button>
+            <el-button type="success" link size="small" @click="handleApprove(row)" v-action:activity:audit>通过</el-button>
+            <el-button type="danger" link size="small" @click="handleReject(row)" v-action:activity:audit>驳回</el-button>
           </template>
+          <!-- 已发布状态 -->
           <template v-if="row.status === 'PUBLISHED'">
-            <el-button type="primary" link size="small" @click="handleStart(row)" v-action:activity:update>开始活动</el-button>
-            <el-button type="danger" link size="small" @click="handleCancel(row)" v-action:activity:update>取消</el-button>
+            <el-button type="primary" link size="small" @click="handleStart(row)" v-action:activity:update>开始</el-button>
+            <el-button type="info" link size="small" @click="handleCancel(row)" v-action:activity:update>取消</el-button>
           </template>
+          <!-- 进行中状态 -->
           <template v-if="row.status === 'ONGOING'">
-            <el-button type="success" link size="small" @click="handleEnd(row)" v-action:activity:update>结束活动</el-button>
+            <el-button type="success" link size="small" @click="handleEnd(row)" v-action:activity:update>结束</el-button>
           </template>
+          <!-- 报名列表按钮 - 所有状态可见 -->
+          <el-button type="primary" link size="small" @click="showRegistrations(row)">
+            报名列表({{ row.currentParticipants }})
+          </el-button>
+          <!-- 编辑和删除 -->
           <el-button type="primary" link size="small" @click="handleEdit(row)" v-action:activity:update>编辑</el-button>
           <el-button type="danger" link size="small" @click="handleDelete(row)" v-action:activity:delete>删除</el-button>
         </template>
@@ -94,17 +109,25 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 报名列表弹窗 -->
+    <RegistrationListDialog
+      v-model="registrationDialogVisible"
+      :activity-id="currentActivityId"
+      :activity="currentActivity"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   ActivityStatus,
   ActivityStatusList,
   ActivityStatusLabel,
-  ActivityStatusColor,
+  ActivityStatusType,
   Activity,
   getActivityList,
   createActivity,
@@ -117,7 +140,9 @@ import {
   cancelActivity
 } from '../api/activity';
 import { getClubList } from '../api/club';
+import RegistrationListDialog from './registration-list.vue';
 
+const router = useRouter();
 const tableData = ref<Activity[]>([]);
 const pageTotal = ref(0);
 const clubOptions = ref<{ id: number; name: string }[]>([]);
@@ -143,7 +168,17 @@ const form = reactive({
   clubId: 0
 });
 
+// 报名列表弹窗
+const registrationDialogVisible = ref(false);
+const currentActivityId = ref<number>();
+const currentActivity = ref<Activity>();
+
 const formTitle = computed(() => (isEdit.value ? '编辑活动' : '新建活动'));
+
+const formatTime = (time: string) => {
+  if (!time) return '-';
+  return time.replace('T', ' ').substring(0, 16);
+};
 
 const fetchActivities = async () => {
   try {
@@ -168,6 +203,16 @@ const fetchClubs = async () => {
   } catch (e) {
     console.error(e);
   }
+};
+
+const goToDetail = (id: number) => {
+  router.push(`/activities/detail/${id}`);
+};
+
+const showRegistrations = (row: Activity) => {
+  currentActivityId.value = row.id;
+  currentActivity.value = row;
+  registrationDialogVisible.value = true;
 };
 
 const handleSearch = () => {

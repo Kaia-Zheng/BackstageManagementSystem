@@ -75,6 +75,22 @@ const routes: RouteRecordRaw[] = [
         component: () => import(/* webpackChunkName: "activity" */ '../views/activity-list.vue'),
       },
       {
+        path: '/activities/detail/:id',
+        name: 'activity-detail',
+        meta: {
+          title: '活动详情',
+        },
+        component: () => import(/* webpackChunkName: "activity" */ '../views/activity-detail.vue'),
+      },
+      {
+        path: '/my-club',
+        name: 'my-club',
+        meta: {
+          title: '我的社团',
+        },
+        component: () => import(/* webpackChunkName: "club" */ '../views/my-club.vue'),
+      },
+      {
         path: '/members',
         name: 'members',
         meta: {

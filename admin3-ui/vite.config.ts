@@ -21,7 +21,7 @@ export default defineConfig({
 		host: '0.0.0.0',
 		proxy: {
 			'/admin3': {
-				target: `http://localhost:8080`,
+				target: `http://localhost:35729`,
 			},
 		},
 	},

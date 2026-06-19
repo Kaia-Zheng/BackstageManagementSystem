@@ -59,6 +59,30 @@ const routes: RouteRecordRaw[] = [
         component: () => import(/* webpackChunkName: "dashboard" */ '../views/storage-list.vue'),
       },
       {
+        path: '/clubs',
+        name: 'clubs',
+        meta: {
+          title: '社团管理',
+        },
+        component: () => import(/* webpackChunkName: "club" */ '../views/club-list.vue'),
+      },
+      {
+        path: '/activities',
+        name: 'activities',
+        meta: {
+          title: '活动管理',
+        },
+        component: () => import(/* webpackChunkName: "activity" */ '../views/activity-list.vue'),
+      },
+      {
+        path: '/members',
+        name: 'members',
+        meta: {
+          title: '成员管理',
+        },
+        component: () => import(/* webpackChunkName: "member" */ '../views/member-list.vue'),
+      },
+      {
         path: '/tabs',
         name: 'tabs',
         meta: {

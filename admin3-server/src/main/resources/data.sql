@@ -234,5 +234,57 @@ INSERT INTO role_resource (role_id, resource_id) VALUES (4, 15);
 
 INSERT INTO storage_config (type, id, is_default, name, address, storage_path, access_key, bucket_name, endpoint, secret_key, create_time, create_user, storage_id) VALUES (0, 1, true, '本地', 'storage/fetch/', 'files', null, null, null, null, '2023-07-10 17:00:48.000000', 'admin', 'SsIPzgpd9rFgxJhe3yUxk');
 
+-- 社团和活动管理的资源与权限
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (100, 'School', '社团活动', null, 'club-activity', 0, null, 1);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (101, 'Collection', '社团管理', null, 'club:view', 0, '/clubs', 100);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (102, 'Calendar', '活动管理', null, 'activity:view', 0, '/activities', 100);
+
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (103, null, '查看社团', null, 'club:view', 1, null, 101);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (104, null, '新增社团', null, 'club:create', 1, null, 101);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (105, null, '修改社团', null, 'club:update', 1, null, 101);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (106, null, '删除社团', null, 'club:delete', 1, null, 101);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (107, null, '管理成员', null, 'club:manage', 1, null, 101);
+
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (108, null, '查看活动', null, 'activity:view', 1, null, 102);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (109, null, '新增活动', null, 'activity:create', 1, null, 102);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (110, null, '修改活动', null, 'activity:update', 1, null, 102);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (111, null, '删除活动', null, 'activity:delete', 1, null, 102);
+INSERT INTO resource (id, icon, name, parent_ids, permission, type, url, parent_id) VALUES (112, null, '审核活动', null, 'activity:audit', 1, null, 102);
+
+-- 超级管理员拥有全部社团和活动权限
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 100);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 101);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 102);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 103);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 104);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 105);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 106);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 107);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 108);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 109);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 110);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 111);
+INSERT INTO role_resource (role_id, resource_id) VALUES (1, 112);
+
+-- 测试社团
+INSERT INTO club (id, name, description, category, founded_date, state, avatar, member_count, owner_id, created_time)
+VALUES (1, '篮球协会', '校内篮球爱好者社团，定期举办篮球训练和比赛活动', 'SPORTS', '2023-01-01', 0, null, 0, 2, NOW());
+
+INSERT INTO club (id, name, description, category, founded_date, state, avatar, member_count, owner_id, created_time)
+VALUES (2, '科技创新社', '专注于科技创新和编程开发的学生社团', 'ACADEMIC', '2023-03-15', 0, null, 0, 2, NOW());
+
+INSERT INTO club (id, name, description, category, founded_date, state, avatar, member_count, owner_id, created_time)
+VALUES (3, '文艺表演社', '丰富学生文化生活，展示学生才艺的学生社团', 'CULTURAL', '2023-05-20', 0, null, 0, 2, NOW());
+
+-- 测试活动 (status: 0=待审核, 1=已发布, 2=进行中, 3=已结束, 4=已取消)
+INSERT INTO activity (id, title, description, location, activity_time, status, cover_image, max_participants, current_participants, club_id, created_time)
+VALUES (1, '迎新篮球赛', '新学期首场篮球友谊比赛，欢迎所有同学参加', '篮球场A', '2024-09-15 14:00:00', 1, null, 30, 0, 1, NOW());
+
+INSERT INTO activity (id, title, description, location, activity_time, status, cover_image, max_participants, current_participants, club_id, created_time)
+VALUES (2, '编程马拉松', '48小时编程挑战活动，组队完成指定项目', '实验楼201', '2024-10-01 09:00:00', 0, null, 20, 0, 2, NOW());
+
+INSERT INTO activity (id, title, description, location, activity_time, status, cover_image, max_participants, current_participants, club_id, created_time)
+VALUES (3, '校园歌手大赛', '一年一度的校园歌手比赛，展示学生才艺', '大礼堂', '2024-11-20 18:00:00', 1, null, 500, 0, 3, NOW());
+
 -- 开启外键约束检查
 set foreign_key_checks = 1;

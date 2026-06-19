@@ -92,7 +92,9 @@ tags.clearTags();
   width: 100%;
   height: 100%;
   background-image: url(../assets/img/login-bg.jpg);
-  background-size: 100%;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
 }
 
 .ms-title {

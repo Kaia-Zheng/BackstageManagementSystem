@@ -1,6 +1,7 @@
 package tech.wetech.admin3.sys.service;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,8 @@ import tech.wetech.admin3.sys.repository.ClubRepository;
 import tech.wetech.admin3.sys.repository.UserRepository;
 import tech.wetech.admin3.sys.service.dto.PageDTO;
 import tech.wetech.admin3.sys.service.dto.UserinfoDTO;
+
+import java.util.List;
 
 import java.time.LocalDateTime;
 
@@ -59,7 +62,14 @@ public class ActivityService {
       page = activityRepository.findByConditions(title, status, clubId, pageable);
     } else {
       // 非管理员查询可见活动（已发布/进行中/已结束）
-      page = activityRepository.findVisibleByConditions(title, clubId, pageable);
+      // 先查询所有活动，然后在内存中过滤可见状态
+      Page<Activity> allPage = activityRepository.findByConditions(title, null, clubId, pageable);
+      List<Activity> visible = allPage.getContent().stream()
+        .filter(a -> a.getStatus() == Activity.Status.PUBLISHED
+                  || a.getStatus() == Activity.Status.ONGOING
+                  || a.getStatus() == Activity.Status.ENDED)
+        .toList();
+      page = new PageImpl<>(visible, pageable, visible.size());
     }
     return new PageDTO<>(page.getContent(), page.getTotalElements());
   }

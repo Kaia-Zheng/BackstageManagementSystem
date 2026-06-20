@@ -19,19 +19,26 @@ import java.util.Optional;
 @Repository
 public interface ActivityRegistrationRepository extends JpaRepository<ActivityRegistration, Long> {
 
-  @Query("from ActivityRegistration ar where ar.activity.id = :activityId and ar.status = tech.wetech.admin3.sys.model.ActivityRegistration.RegisterStatus.REGISTERED")
+  // 使用原生 SQL 查询已报名记录
+  @Query(value = "select * from sys_activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
   Page<ActivityRegistration> findByActivityId(@Param("activityId") Long activityId, Pageable pageable);
 
-  @Query("from ActivityRegistration ar where ar.user.id = :userId and ar.status = tech.wetech.admin3.sys.model.ActivityRegistration.RegisterStatus.REGISTERED")
+  @Query(value = "select * from sys_activity_registration ar where ar.user_id = :userId and ar.status = 'REGISTERED'", nativeQuery = true)
   Page<ActivityRegistration> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
   @Query("from ActivityRegistration ar where ar.activity.id = :activityId and ar.user.id = :userId")
   Optional<ActivityRegistration> findByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId);
 
-  @Query("select count(ar) from ActivityRegistration ar where ar.activity.id = :activityId and ar.status = tech.wetech.admin3.sys.model.ActivityRegistration.RegisterStatus.REGISTERED")
+  @Query("from ActivityRegistration ar where ar.activity.id = :activityId and ar.user.id = :userId")
+  Page<ActivityRegistration> findByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId, Pageable pageable);
+
+  @Query(value = "select count(*) from sys_activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
   long countByActivityId(@Param("activityId") Long activityId);
 
   @Modifying
   @Query("delete from ActivityRegistration ar where ar.activity.id = :activityId and ar.user.id = :userId")
   void deleteByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId);
+
+  // 查询某个活动的所有报名记录（不区分状态）
+  Page<ActivityRegistration> findAllByActivityId(Long activityId, Pageable pageable);
 }

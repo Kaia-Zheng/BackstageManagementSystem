@@ -136,6 +136,25 @@
               </el-col>
             </el-row>
             <el-empty v-else description="暂未加入任何社团" :image-size="100" />
+            <!-- 我的申请 -->
+            <div class="section-title" style="margin-top: 24px;">我的申请</div>
+            <el-table :data="myApplications" stripe v-if="myApplications.length" style="width: 100%;">
+              <el-table-column prop="clubName" label="社团名称" min-width="140" />
+              <el-table-column label="申请时间" width="170">
+                <template #default="{ row }">{{ formatTime(row.createTime) }}</template>
+              </el-table-column>
+              <el-table-column label="状态" width="100" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === 'PENDING' ? 'warning' : row.status === 'APPROVED' ? 'success' : 'danger'" size="small">
+                    {{ row.status === 'PENDING' ? '待审核' : row.status === 'APPROVED' ? '已通过' : '已拒绝' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="拒绝原因" min-width="150">
+                <template #default="{ row }">{{ row.reason || '-' }}</template>
+              </el-table-column>
+            </el-table>
+            <el-empty v-else description="暂无申请记录" :image-size="60" />
           </el-tab-pane>
 
           <!-- 我的活动 -->
@@ -223,11 +242,13 @@ import { ElMessage, type FormInstance, type FormRules, type UploadRequestOptions
 import { Phone, Message, User } from '@element-plus/icons-vue';
 import { getProfile, updateProfile, type ProfileData } from '../api/profile';
 import { cancelRegistration } from '../api/activity';
+import { getMyApplications, type JoinApplication } from '../api/join-application';
 
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png';
 const activeTab = ref('overview');
 const loading = ref(false);
 const saving = ref(false);
+const myApplications = ref<JoinApplication[]>([]);
 const settingsFormRef = ref<FormInstance>();
 
 const profile = ref<ProfileData>({
@@ -298,6 +319,15 @@ const fetchProfile = async () => {
   }
 };
 
+const fetchMyApplications = async () => {
+  try {
+    const res = await getMyApplications();
+    myApplications.value = res.data.list || [];
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 const handleCancelRegistration = async (row: any) => {
   try {
     await cancelRegistration(row.activityId);
@@ -347,6 +377,7 @@ const saveSettings = () => {
 
 onMounted(() => {
   fetchProfile();
+  fetchMyApplications();
 });
 </script>
 

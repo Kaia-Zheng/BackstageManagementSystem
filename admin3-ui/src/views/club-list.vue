@@ -32,6 +32,15 @@
         <template #default="{ row }">{{ row.owner?.username || '-' }}</template>
       </el-table-column>
       <el-table-column prop="memberCount" label="成员数" width="80" align="center"></el-table-column>
+      <el-table-column label="加入状态" width="110" align="center">
+        <template #default="{ row }">
+          <el-button v-if="joinStatusMap[row.id] === 'NONE'" type="primary" size="small" @click="handleJoin(row)" :loading="joiningClubId === row.id">申请加入</el-button>
+          <el-tag v-else-if="joinStatusMap[row.id] === 'JOINED'" type="success" size="small">已加入</el-tag>
+          <el-tag v-else-if="joinStatusMap[row.id] === 'PENDING'" type="warning" size="small">审核中</el-tag>
+          <el-tag v-else-if="joinStatusMap[row.id] === 'REJECTED'" type="danger" size="small">已拒绝</el-tag>
+          <el-button v-else type="primary" size="small" link @click="checkJoinStatus(row.id)">查询</el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link size="small" @click="handleEdit(row)" v-action:club:update>编辑</el-button>
@@ -113,6 +122,7 @@ import {
   deleteClub
 } from '../api/club';
 import { getUserList } from '../api/user';
+import { applyToJoin, getJoinStatus } from '../api/join-application';
 
 const tableData = ref<Club[]>([]);
 const pageTotal = ref(0);
@@ -130,6 +140,8 @@ const userOptions = ref<{ id: number; username: string }[]>([]);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const saving = ref(false);
+const joinStatusMap = reactive<Record<number, string>>({});
+const joiningClubId = ref<number | null>(null);
 const form = reactive<{
   id: number;
   name: string;
@@ -163,6 +175,7 @@ const fetchClubs = async () => {
     });
     tableData.value = res.data.list || [];
     pageTotal.value = res.data.total || 0;
+    checkAllJoinStatus();
   } catch (e) {
     console.error(e);
   }
@@ -259,6 +272,34 @@ const saveForm = () => {
   }).finally(() => {
     saving.value = false;
   });
+};
+
+const checkJoinStatus = async (clubId: number) => {
+  try {
+    const res = await getJoinStatus(clubId);
+    joinStatusMap[clubId] = res.data.status;
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const checkAllJoinStatus = async () => {
+  for (const club of tableData.value) {
+    checkJoinStatus(club.id);
+  }
+};
+
+const handleJoin = async (row: Club) => {
+  joiningClubId.value = row.id;
+  try {
+    await applyToJoin(row.id);
+    ElMessage.success('申请已提交，等待社团负责人审核');
+    joinStatusMap[row.id] = 'PENDING';
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || '申请失败');
+  } finally {
+    joiningClubId.value = null;
+  }
 };
 
 onMounted(() => {

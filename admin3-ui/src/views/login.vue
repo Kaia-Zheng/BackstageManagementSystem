@@ -26,6 +26,9 @@
           <el-button type="primary" @click="submitForm(login)">登录</el-button>
         </div>
         <p class="login-tips">Tips : admin/123456</p>
+        <p class="login-tips" style="text-align: center;">
+          还没有账号？<el-link type="primary" @click="$router.push('/register')">立即注册</el-link>
+        </p>
       </el-form>
     </div>
   </div>

@@ -126,6 +126,14 @@ const routes: RouteRecordRaw[] = [
     component: () => import(/* webpackChunkName: "login" */ '../views/login.vue'),
   },
   {
+    path: '/register',
+    name: 'Register',
+    meta: {
+      title: '注册',
+    },
+    component: () => import(/* webpackChunkName: "register" */ '../views/register.vue'),
+  },
+  {
     path: '/403',
     name: '403',
     meta: {
@@ -144,7 +152,7 @@ router.beforeEach(async (to, from, next) => {
   document.title = `${to.meta.title} | 天津仁爱学院社团管理系统`;
   const token = localStorage.getItem('token');
   const basicStore = useBasicStore();
-  if (!token && to.path !== '/login') {
+  if (!token && to.path !== '/login' && to.path !== '/register') {
     next('/login');
   } /*else if (to.meta.permiss && !permiss.key.includes(to.meta.permiss)) {
         // 如果没有权限，则进入403

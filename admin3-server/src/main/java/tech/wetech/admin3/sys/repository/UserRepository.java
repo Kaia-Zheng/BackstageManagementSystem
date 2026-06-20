@@ -17,6 +17,8 @@ import java.util.Set;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+  User findByUsername(String username);
+
   @Query("from User where id in (:userIds)")
   Set<User> findByIds(Set<Long> userIds);
 

@@ -4,7 +4,7 @@
       <div class="ms-title">天津仁爱学院社团管理系统</div>
       <el-form :model="param" :rules="rules" ref="login" label-width="0px" class="ms-content">
         <el-form-item prop="username">
-          <el-input v-model="param.username" placeholder="username">
+          <el-input v-model="param.username" placeholder="学号/教职工号">
             <template #prepend>
               <el-button :icon="User" disabled></el-button>
             </template>

@@ -34,7 +34,9 @@ public class RegisterController {
         request.username(),
         request.password(),
         request.realName(),
-        request.roleKey()
+        request.roleKey(),
+        request.phone(),
+        request.email()
       );
       return ResponseEntity.ok(new RegisterResponse("注册成功"));
     } catch (Exception e) {
@@ -47,7 +49,9 @@ public class RegisterController {
     @NotBlank @Size(min = 6, max = 20) String password,
     @NotBlank String confirmPassword,
     @NotBlank String realName,
-    @NotBlank @Pattern(regexp = "^(student|teacher)$", message = "身份类型无效") String roleKey
+    @NotBlank @Pattern(regexp = "^(student|teacher)$", message = "身份类型无效") String roleKey,
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确") String phone,
+    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "邮箱格式不正确") String email
   ) {}
 
   record RegisterResponse(String message) {}

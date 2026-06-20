@@ -1,6 +1,6 @@
 <template>
   <div class="login-wrap">
-    <div class="ms-login" style="margin: -240px 0 0 -175px;">
+    <div class="ms-login" style="margin: -300px 0 0 -175px;">
       <div class="ms-title">用户注册</div>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="0px" class="ms-content">
         <el-form-item prop="username">
@@ -31,6 +31,20 @@
             </template>
           </el-input>
         </el-form-item>
+        <el-form-item prop="phone">
+          <el-input v-model="form.phone" placeholder="手机号">
+            <template #prepend>
+              <el-button :icon="Iphone" disabled></el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item prop="email">
+          <el-input v-model="form.email" placeholder="邮箱">
+            <template #prepend>
+              <el-button :icon="Message" disabled></el-button>
+            </template>
+          </el-input>
+        </el-form-item>
         <el-form-item prop="roleKey">
           <el-select v-model="form.roleKey" placeholder="请选择身份" style="width: 100%;">
             <el-option label="学生" value="student" />
@@ -53,7 +67,7 @@ import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { FormInstance, FormRules } from 'element-plus';
 import { ElMessage } from 'element-plus';
-import { Lock, User, UserFilled } from '@element-plus/icons-vue';
+import { Lock, User, UserFilled, Iphone, Message } from '@element-plus/icons-vue';
 import { register } from '../api/register';
 
 const router = useRouter();
@@ -65,6 +79,8 @@ const form = reactive({
   password: '',
   confirmPassword: '',
   realName: '',
+  phone: '',
+  email: '',
   roleKey: ''
 });
 
@@ -92,6 +108,14 @@ const rules: FormRules = {
   ],
   realName: [
     { required: true, message: '请输入真实姓名', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+  ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
   ],
   roleKey: [
     { required: true, message: '请选择身份', trigger: 'change' }

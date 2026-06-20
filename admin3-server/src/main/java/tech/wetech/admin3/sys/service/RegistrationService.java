@@ -30,7 +30,7 @@ public class RegistrationService {
   }
 
   @Transactional
-  public User register(String username, String password, String realName, String roleKey) {
+  public User register(String username, String password, String realName, String roleKey, String phone, String email) {
     // 1. 校验用户名是否已存在
     if (userRepository.findByUsername(username) != null) {
       throw new BusinessException(CommonResultStatus.PARAM_ERROR, "用户名已存在");
@@ -51,6 +51,9 @@ public class RegistrationService {
     // 3. 创建用户
     User user = new User();
     user.setUsername(username);
+    user.setRealName(realName);
+    user.setPhone(phone);
+    user.setEmail(email);
     user.setGender(User.Gender.MALE); // 默认
     user.setState(User.State.NORMAL);
     user.setRoles(new LinkedHashSet<>(Set.of(role)));

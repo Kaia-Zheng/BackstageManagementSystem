@@ -23,6 +23,15 @@ public class User extends BaseEntity {
 
   private String avatar;
 
+  @Column
+  private String phone;
+
+  @Column
+  private String email;
+
+  @Column
+  private String realName;
+
   @Column(nullable = false)
   private Gender gender;
 
@@ -103,6 +112,30 @@ public class User extends BaseEntity {
 
   public void setAvatar(String avatar) {
     this.avatar = avatar;
+  }
+
+  public String getPhone() {
+    return phone;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public String getRealName() {
+    return realName;
+  }
+
+  public void setRealName(String realName) {
+    this.realName = realName;
   }
 
   public Gender getGender() {

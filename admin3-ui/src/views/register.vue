@@ -4,7 +4,7 @@
       <div class="ms-title">用户注册</div>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="0px" class="ms-content">
         <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名（4-20位字母或数字）">
+          <el-input v-model="form.username" placeholder="学号/教职工号">
             <template #prepend>
               <el-button :icon="User" disabled></el-button>
             </template>

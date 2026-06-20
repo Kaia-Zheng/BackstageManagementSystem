@@ -1,14 +1,20 @@
 package tech.wetech.admin3.sys.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import tech.wetech.admin3.common.BusinessException;
 import tech.wetech.admin3.common.CommonResultStatus;
 import tech.wetech.admin3.common.Constants;
+import tech.wetech.admin3.common.DomainEventPublisher;
 import tech.wetech.admin3.common.SessionItemHolder;
 import tech.wetech.admin3.common.authz.PermissionHelper;
+import tech.wetech.admin3.sys.event.ClubMemberAdded;
+import tech.wetech.admin3.sys.event.ClubMemberRemoved;
 import tech.wetech.admin3.sys.model.Club;
 import tech.wetech.admin3.sys.model.ClubMember;
 import tech.wetech.admin3.sys.model.User;
@@ -65,6 +71,7 @@ public class ClubMemberService {
     // 更新成员数
     club.setMemberCount((int) clubMemberRepository.countByClubId(clubId));
     clubRepository.save(club);
+    DomainEventPublisher.instance().publish(new ClubMemberAdded(club.getName(), user.getUsername(), getCurrentUsername(), getCurrentIp()));
     return member;
   }
 
@@ -77,8 +84,9 @@ public class ClubMemberService {
     if (!clubMemberRepository.existsByClubIdAndUserId(clubId, userId)) {
       throw new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "该用户不是社团成员");
     }
-    clubMemberRepository.deleteByClubIdAndUserId(clubId, userId);
     Club club = clubRepository.findById(clubId).orElseThrow();
+    DomainEventPublisher.instance().publish(new ClubMemberRemoved(club.getName(), getUsernameById(userId), getCurrentUsername(), getCurrentIp()));
+    clubMemberRepository.deleteByClubIdAndUserId(clubId, userId);
     club.setMemberCount((int) clubMemberRepository.countByClubId(clubId));
     clubRepository.save(club);
   }
@@ -109,5 +117,25 @@ public class ClubMemberService {
     if (!isAdmin && !isOwner) {
       throw new BusinessException(CommonResultStatus.FORBIDDEN, "没有权限管理社团成员");
     }
+  }
+
+  private String getCurrentUsername() {
+    UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
+    return currentUser != null ? currentUser.username() : "unknown";
+  }
+
+  private String getCurrentIp() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+    String ip = request.getHeader("X-Forwarded-For");
+    if (ip == null || ip.isEmpty()) {
+      ip = request.getRemoteAddr();
+    }
+    return ip;
+  }
+
+  private String getUsernameById(Long userId) {
+    return userRepository.findById(userId)
+      .map(User::getUsername)
+      .orElse("unknown");
   }
 }

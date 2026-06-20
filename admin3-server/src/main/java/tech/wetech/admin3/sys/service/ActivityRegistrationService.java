@@ -1,14 +1,20 @@
 package tech.wetech.admin3.sys.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import tech.wetech.admin3.common.BusinessException;
 import tech.wetech.admin3.common.CommonResultStatus;
 import tech.wetech.admin3.common.Constants;
+import tech.wetech.admin3.common.DomainEventPublisher;
 import tech.wetech.admin3.common.SessionItemHolder;
 import tech.wetech.admin3.common.authz.PermissionHelper;
+import tech.wetech.admin3.sys.event.ActivityRegistered;
+import tech.wetech.admin3.sys.event.ActivityRegistrationCancelled;
 import tech.wetech.admin3.sys.model.Activity;
 import tech.wetech.admin3.sys.model.ActivityRegistration;
 import tech.wetech.admin3.sys.model.Club;
@@ -32,15 +38,18 @@ public class ActivityRegistrationService {
   private final ActivityRepository activityRepository;
   private final ClubRepository clubRepository;
   private final UserRepository userRepository;
+  private final NotificationService notificationService;
 
   public ActivityRegistrationService(ActivityRegistrationRepository registrationRepository,
                                      ActivityRepository activityRepository,
                                      ClubRepository clubRepository,
-                                     UserRepository userRepository) {
+                                     UserRepository userRepository,
+                                     NotificationService notificationService) {
     this.registrationRepository = registrationRepository;
     this.activityRepository = activityRepository;
     this.clubRepository = clubRepository;
     this.userRepository = userRepository;
+    this.notificationService = notificationService;
   }
 
   public PageDTO<ActivityRegistration> findByActivity(Long activityId, Pageable pageable) {
@@ -92,6 +101,18 @@ public class ActivityRegistrationService {
     // 更新活动当前报名人数
     activity.setCurrentParticipants((int) registrationRepository.countByActivityId(activityId));
     activityRepository.save(activity);
+
+    DomainEventPublisher.instance().publish(new ActivityRegistered(activity.getTitle(), user.getUsername(), getCurrentIp()));
+
+    // 通知社团负责人有新报名
+    if (activity.getClub().getOwner() != null) {
+      notificationService.sendNotification(
+        activity.getClub().getOwner().getId(),
+        "新活动报名",
+        user.getUsername() + " 报名了您社团的活动「" + activity.getTitle() + "」"
+      );
+    }
+
     return registration;
   }
 
@@ -114,6 +135,13 @@ public class ActivityRegistrationService {
     }
     registration.setStatus(ActivityRegistration.RegisterStatus.CANCELLED);
     registrationRepository.save(registration);
+
+    DomainEventPublisher.instance().publish(new ActivityRegistrationCancelled(
+      activityRepository.findById(activityId).orElseThrow().getTitle(),
+      getCurrentUsername(),
+      getCurrentIp()
+    ));
+
     // 更新活动当前报名人数
     Activity activity = activityRepository.findById(activityId).orElseThrow();
     activity.setCurrentParticipants((int) registrationRepository.countByActivityId(activityId));
@@ -168,5 +196,19 @@ public class ActivityRegistrationService {
       }
     }
     throw new BusinessException(CommonResultStatus.FORBIDDEN, "没有权限管理此活动的报名");
+  }
+
+  private String getCurrentUsername() {
+    UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
+    return currentUser != null ? currentUser.username() : "unknown";
+  }
+
+  private String getCurrentIp() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+    String ip = request.getHeader("X-Forwarded-For");
+    if (ip == null || ip.isEmpty()) {
+      ip = request.getRemoteAddr();
+    }
+    return ip;
   }
 }

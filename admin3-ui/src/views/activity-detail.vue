@@ -47,10 +47,10 @@
         <div class="action-buttons">
           <!-- 已发布状态 - 显示报名按钮 -->
           <template v-if="activity.status === 'PUBLISHED'">
-            <el-button v-if="!myRegistration" type="primary" size="large" @click="handleRegister" :disabled="!canRegister">
+            <el-button v-if="!myRegistration" type="primary" size="large" @click="handleRegister" :disabled="!canRegister" :loading="registerLoading">
               立即报名
             </el-button>
-            <el-button v-else type="warning" size="large" @click="handleCancelRegister">
+            <el-button v-else type="warning" size="large" @click="handleCancelRegister" :loading="cancelLoading">
               取消报名
             </el-button>
           </template>
@@ -135,6 +135,8 @@ const activity = ref<Activity>();
 const myRegistration = ref<Registration | null>(null);
 const registrations = ref<Registration[]>([]);
 const loading = ref(true);
+const registerLoading = ref(false);
+const cancelLoading = ref(false);
 
 const goBack = () => {
   router.back();
@@ -185,23 +187,29 @@ const fetchRegistrations = async () => {
 
 const handleRegister = () => {
   if (!activity.value) return;
+  registerLoading.value = true;
   registerActivity(activity.value.id).then(() => {
     ElMessage.success('报名成功');
     fetchActivity();
     fetchRegistrations();
   }).catch((e: any) => {
     ElMessage.error(e.message || '报名失败');
+  }).finally(() => {
+    registerLoading.value = false;
   });
 };
 
 const handleCancelRegister = () => {
   if (!activity.value) return;
+  cancelLoading.value = true;
   cancelRegistration(activity.value.id).then(() => {
     ElMessage.success('已取消报名');
     fetchActivity();
     fetchRegistrations();
   }).catch((e: any) => {
     ElMessage.error(e.message || '取消失败');
+  }).finally(() => {
+    cancelLoading.value = false;
   });
 };
 

@@ -11,7 +11,7 @@
       <el-button @click="handleAdd" type="primary" v-action:club:manage style="float: right" :disabled="!selectedClubId">添加成员</el-button>
     </div>
 
-    <el-table :data="tableData" border class="table" header-cell-class-name="table-header">
+    <el-table v-if="tableData.length > 0" :data="tableData" border class="table" header-cell-class-name="table-header">
       <el-table-column prop="id" label="ID" width="70" align="center"></el-table-column>
       <el-table-column label="用户名" min-width="120">
         <template #default="{ row }">{{ row.user?.username || '-' }}</template>
@@ -33,6 +33,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-empty v-if="tableData.length === 0" description="暂无成员数据" />
     <div class="pagination">
       <el-pagination
         background

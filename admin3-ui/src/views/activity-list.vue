@@ -13,7 +13,7 @@
       <el-button type="primary" @click="handleAdd" v-action:activity:create style="float: right">新建活动</el-button>
     </div>
 
-    <el-table :data="tableData" border class="table" header-cell-class-name="table-header">
+    <el-table v-if="tableData.length > 0" :data="tableData" border class="table" header-cell-class-name="table-header">
       <el-table-column prop="id" label="ID" width="70" align="center"></el-table-column>
       <el-table-column prop="title" label="活动标题" min-width="160">
         <template #default="{ row }">
@@ -40,17 +40,17 @@
         <template #default="{ row }">
           <!-- 审核状态 -->
           <template v-if="row.status === 'PENDING'">
-            <el-button type="success" link size="small" @click="handleApprove(row)" v-action:activity:audit>通过</el-button>
-            <el-button type="danger" link size="small" @click="handleReject(row)" v-action:activity:audit>驳回</el-button>
+            <el-button type="success" link size="small" @click="handleApprove(row)" v-action:activity:audit :disabled="actionLoading">通过</el-button>
+            <el-button type="danger" link size="small" @click="handleReject(row)" v-action:activity:audit :disabled="actionLoading">驳回</el-button>
           </template>
           <!-- 已发布状态 -->
           <template v-if="row.status === 'PUBLISHED'">
-            <el-button type="primary" link size="small" @click="handleStart(row)" v-action:activity:update>开始</el-button>
-            <el-button type="info" link size="small" @click="handleCancel(row)" v-action:activity:update>取消</el-button>
+            <el-button type="primary" link size="small" @click="handleStart(row)" v-action:activity:update :disabled="actionLoading">开始</el-button>
+            <el-button type="info" link size="small" @click="handleCancel(row)" v-action:activity:update :disabled="actionLoading">取消</el-button>
           </template>
           <!-- 进行中状态 -->
           <template v-if="row.status === 'ONGOING'">
-            <el-button type="success" link size="small" @click="handleEnd(row)" v-action:activity:update>结束</el-button>
+            <el-button type="success" link size="small" @click="handleEnd(row)" v-action:activity:update :disabled="actionLoading">结束</el-button>
           </template>
           <!-- 报名列表按钮 - 所有状态可见 -->
           <el-button type="primary" link size="small" @click="showRegistrations(row)">
@@ -62,6 +62,9 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-empty v-if="tableData.length === 0" description="暂无活动数据">
+      <el-button type="primary" @click="handleAdd" v-action:activity:create>创建活动</el-button>
+    </el-empty>
     <div class="pagination">
       <el-pagination
         background
@@ -105,7 +108,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="saveForm">确 定</el-button>
+          <el-button type="primary" @click="saveForm" :loading="saving">确 定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -157,6 +160,8 @@ const query = reactive<{ page: number; size: number; title: string; clubId: numb
 
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const saving = ref(false);
+const actionLoading = ref(false);
 const form = reactive({
   id: 0,
   title: '',
@@ -270,9 +275,12 @@ const handleDelete = (row: Activity) => {
 };
 
 const handleApprove = (row: Activity) => {
+  actionLoading.value = true;
   approveActivity(row.id).then(() => {
     ElMessage.success('审核通过');
     fetchActivities();
+  }).finally(() => {
+    actionLoading.value = false;
   });
 };
 
@@ -292,16 +300,22 @@ const handleReject = (row: Activity) => {
 };
 
 const handleStart = (row: Activity) => {
+  actionLoading.value = true;
   startActivity(row.id).then(() => {
     ElMessage.success('活动已开始');
     fetchActivities();
+  }).finally(() => {
+    actionLoading.value = false;
   });
 };
 
 const handleEnd = (row: Activity) => {
+  actionLoading.value = true;
   endActivity(row.id).then(() => {
     ElMessage.success('活动已结束');
     fetchActivities();
+  }).finally(() => {
+    actionLoading.value = false;
   });
 };
 
@@ -325,10 +339,23 @@ const saveForm = () => {
     ElMessage.warning('请填写活动标题');
     return;
   }
+  if (form.title.trim().length < 5 || form.title.trim().length > 50) {
+    ElMessage.warning('活动标题长度应在5-50个字符之间');
+    return;
+  }
+  if (!form.maxParticipants || form.maxParticipants < 1) {
+    ElMessage.warning('最大报名人数不能小于1');
+    return;
+  }
+  if (form.activityTime && new Date(form.activityTime) < new Date()) {
+    ElMessage.warning('活动时间不能早于当前时间');
+    return;
+  }
   if (!form.clubId) {
     ElMessage.warning('请选择所属社团');
     return;
   }
+  saving.value = true;
   const payload = {
     title: form.title,
     description: form.description,
@@ -343,6 +370,8 @@ const saveForm = () => {
     ElMessage.success(isEdit.value ? '更新成功' : '创建成功');
     dialogVisible.value = false;
     fetchActivities();
+  }).finally(() => {
+    saving.value = false;
   });
 };
 

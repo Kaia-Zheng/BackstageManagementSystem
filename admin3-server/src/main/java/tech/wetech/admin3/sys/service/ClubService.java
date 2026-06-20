@@ -1,5 +1,6 @@
 package tech.wetech.admin3.sys.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,23 +27,41 @@ public class ClubService {
   private final ClubRepository clubRepository;
   private final UserRepository userRepository;
   private final ClubMemberRepository clubMemberRepository;
+  private final Cache<String, Object> clubCache;
 
   public ClubService(ClubRepository clubRepository,
                       UserRepository userRepository,
-                      ClubMemberRepository clubMemberRepository) {
+                      ClubMemberRepository clubMemberRepository,
+                      Cache<String, Object> clubCache) {
     this.clubRepository = clubRepository;
     this.userRepository = userRepository;
     this.clubMemberRepository = clubMemberRepository;
+    this.clubCache = clubCache;
   }
 
+  @SuppressWarnings("unchecked")
   public PageDTO<Club> findClubs(Pageable pageable, String name, Club.Category category, Club.State state) {
+    String cacheKey = "clubs:list";
+    PageDTO<Club> cached = (PageDTO<Club>) clubCache.getIfPresent(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
     Page<Club> page = clubRepository.findByConditions(name, category, state, pageable);
-    return new PageDTO<>(page.getContent(), page.getTotalElements());
+    PageDTO<Club> result = new PageDTO<>(page.getContent(), page.getTotalElements());
+    clubCache.put(cacheKey, result);
+    return result;
   }
 
   public Club findClub(Long clubId) {
-    return clubRepository.findById(clubId)
+    String cacheKey = "club:" + clubId;
+    Club cached = (Club) clubCache.getIfPresent(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+    Club club = clubRepository.findById(clubId)
       .orElseThrow(() -> new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "社团不存在"));
+    clubCache.put(cacheKey, club);
+    return club;
   }
 
   @Transactional
@@ -67,6 +86,7 @@ public class ClubService {
     club = clubRepository.save(club);
     // 同步成员数
     club.setMemberCount((int) clubMemberRepository.countByClubId(club.getId()));
+    clubCache.invalidateAll();
     return club;
   }
 
@@ -91,13 +111,16 @@ public class ClubService {
         .orElseThrow(() -> new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "负责人不存在"));
       club.setOwner(owner);
     }
-    return clubRepository.save(club);
+    Club result = clubRepository.save(club);
+    clubCache.invalidateAll();
+    return result;
   }
 
   @Transactional
   public void deleteClub(Long clubId) {
     Club club = findClub(clubId);
     clubRepository.delete(club);
+    clubCache.invalidateAll();
   }
 
   @Transactional
@@ -105,5 +128,6 @@ public class ClubService {
     Club club = findClub(clubId);
     club.setMemberCount((int) clubMemberRepository.countByClubId(clubId));
     clubRepository.save(club);
+    clubCache.invalidateAll();
   }
 }

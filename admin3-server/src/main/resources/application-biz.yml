@@ -54,3 +54,21 @@ admin3:
     "[tech.wetech.admin3.sys.event.StorageConfigMarkedAsDefault]":
       text: '标记默认对象存储位置'
       log-template: '对象存储配置 {{config.storageId}} 已标记为默认存储位置'
+    "[tech.wetech.admin3.sys.event.ActivityApproved]":
+      text: '活动审核通过'
+      log-template: ' {{activityTitle}} 审核通过，操作人：{{operatorName}}，IP：{{ip}}'
+    "[tech.wetech.admin3.sys.event.ActivityRejected]":
+      text: '活动审核不通过'
+      log-template: ' {{activityTitle}} 审核不通过，原因：{{reason}}，操作人：{{operatorName}}，IP：{{ip}}'
+    "[tech.wetech.admin3.sys.event.ActivityRegistered]":
+      text: '活动报名'
+      log-template: ' {{username}} 报名了活动 {{activityTitle}}，IP：{{ip}}'
+    "[tech.wetech.admin3.sys.event.ActivityRegistrationCancelled]":
+      text: '取消活动报名'
+      log-template: ' {{username}} 取消了活动 {{activityTitle}} 的报名，IP：{{ip}}'
+    "[tech.wetech.admin3.sys.event.ClubMemberAdded]":
+      text: '添加社团成员'
+      log-template: ' {{operatorName}} 将 {{username}} 添加到社团 {{clubName}}，IP：{{ip}}'
+    "[tech.wetech.admin3.sys.event.ClubMemberRemoved]":
+      text: '移除社团成员'
+      log-template: ' {{operatorName}} 将 {{username}} 从社团 {{clubName}} 移除，IP：{{ip}}'

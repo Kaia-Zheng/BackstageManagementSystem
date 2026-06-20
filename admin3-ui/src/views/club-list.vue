@@ -13,7 +13,7 @@
       <el-button type="primary" @click="handleAdd" v-action:club:create style="float: right">新建社团</el-button>
     </div>
 
-    <el-table :data="tableData" border class="table" header-cell-class-name="table-header">
+    <el-table v-if="tableData.length > 0" :data="tableData" border class="table" header-cell-class-name="table-header">
       <el-table-column prop="id" label="ID" width="70" align="center"></el-table-column>
       <el-table-column prop="name" label="社团名称" min-width="140"></el-table-column>
       <el-table-column prop="description" label="简介" min-width="200" show-overflow-tooltip></el-table-column>
@@ -39,6 +39,9 @@
         </template>
       </el-table-column>
     </el-table>
+    <el-empty v-if="tableData.length === 0" description="暂无社团数据">
+      <el-button type="primary" @click="handleAdd" v-action:club:create>创建社团</el-button>
+    </el-empty>
     <div class="pagination">
       <el-pagination
         background
@@ -86,7 +89,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="saveForm">确 定</el-button>
+          <el-button type="primary" @click="saveForm" :loading="saving">确 定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -126,6 +129,7 @@ const userOptions = ref<{ id: number; username: string }[]>([]);
 
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const saving = ref(false);
 const form = reactive<{
   id: number;
   name: string;
@@ -233,6 +237,11 @@ const saveForm = () => {
     ElMessage.warning('请填写社团名称');
     return;
   }
+  if (form.name.trim().length < 2 || form.name.trim().length > 20) {
+    ElMessage.warning('社团名称长度应在2-20个字符之间');
+    return;
+  }
+  saving.value = true;
   const payload = {
     name: form.name,
     description: form.description,
@@ -247,6 +256,8 @@ const saveForm = () => {
     ElMessage.success(isEdit.value ? '更新成功' : '创建成功');
     dialogVisible.value = false;
     fetchClubs();
+  }).finally(() => {
+    saving.value = false;
   });
 };
 

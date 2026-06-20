@@ -1,15 +1,22 @@
 package tech.wetech.admin3.sys.service;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import tech.wetech.admin3.common.BusinessException;
 import tech.wetech.admin3.common.CommonResultStatus;
 import tech.wetech.admin3.common.Constants;
+import tech.wetech.admin3.common.DomainEventPublisher;
 import tech.wetech.admin3.common.SessionItemHolder;
 import tech.wetech.admin3.common.authz.PermissionHelper;
+import tech.wetech.admin3.sys.event.ActivityApproved;
+import tech.wetech.admin3.sys.event.ActivityRejected;
 import tech.wetech.admin3.sys.model.Activity;
 import tech.wetech.admin3.sys.model.Club;
 import tech.wetech.admin3.sys.model.User;
@@ -36,15 +43,18 @@ public class ActivityService {
   private final ClubRepository clubRepository;
   private final UserRepository userRepository;
   private final ClubMemberRepository clubMemberRepository;
+  private final Cache<String, Object> activityCache;
 
   public ActivityService(ActivityRepository activityRepository,
                           ClubRepository clubRepository,
                           UserRepository userRepository,
-                          ClubMemberRepository clubMemberRepository) {
+                          ClubMemberRepository clubMemberRepository,
+                          Cache<String, Object> activityCache) {
     this.activityRepository = activityRepository;
     this.clubRepository = clubRepository;
     this.userRepository = userRepository;
     this.clubMemberRepository = clubMemberRepository;
+    this.activityCache = activityCache;
   }
 
   /**
@@ -52,7 +62,13 @@ public class ActivityService {
    * 管理员可见全部；社团负责人可见自己社团的全部（包括待审核/已取消）；
    * 普通用户只可见 PUBLISHED / ONGOING / ENDED
    */
+  @SuppressWarnings("unchecked")
   public PageDTO<Activity> findActivities(Pageable pageable, String title, Long clubId, Activity.Status status) {
+    String cacheKey = "activities:list";
+    PageDTO<Activity> cached = (PageDTO<Activity>) activityCache.getIfPresent(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
     UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
     boolean isAdmin = currentUser != null && PermissionHelper.hasPermission(currentUser.permissions(), "activity:audit");
 
@@ -71,12 +87,21 @@ public class ActivityService {
         .toList();
       page = new PageImpl<>(visible, pageable, visible.size());
     }
-    return new PageDTO<>(page.getContent(), page.getTotalElements());
+    PageDTO<Activity> result = new PageDTO<>(page.getContent(), page.getTotalElements());
+    activityCache.put(cacheKey, result);
+    return result;
   }
 
   public Activity findActivity(Long activityId) {
-    return activityRepository.findById(activityId)
+    String cacheKey = "activity:" + activityId;
+    Activity cached = (Activity) activityCache.getIfPresent(cacheKey);
+    if (cached != null) {
+      return cached;
+    }
+    Activity activity = activityRepository.findById(activityId)
       .orElseThrow(() -> new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "活动不存在"));
+    activityCache.put(cacheKey, activity);
+    return activity;
   }
 
   /**
@@ -113,7 +138,9 @@ public class ActivityService {
 
     User creator = userRepository.findById(currentUser.userId()).orElse(null);
     activity.setCreator(creator);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    return result;
   }
 
   /**
@@ -131,7 +158,9 @@ public class ActivityService {
     if (activityTime != null) activity.setActivityTime(activityTime);
     if (coverImage != null) activity.setCoverImage(coverImage);
     if (maxParticipants != null) activity.setMaxParticipants(maxParticipants);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    return result;
   }
 
   /**
@@ -144,7 +173,10 @@ public class ActivityService {
       throw new BusinessException(CommonResultStatus.PARAM_ERROR, "只有待审核的活动可以审核通过");
     }
     activity.setStatus(Activity.Status.PUBLISHED);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    DomainEventPublisher.instance().publish(new ActivityApproved(activity.getTitle(), getCurrentUsername(), getCurrentIp()));
+    return result;
   }
 
   /**
@@ -158,7 +190,10 @@ public class ActivityService {
     }
     activity.setStatus(Activity.Status.CANCELLED);
     activity.setRejectReason(reason);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    DomainEventPublisher.instance().publish(new ActivityRejected(activity.getTitle(), reason, getCurrentUsername(), getCurrentIp()));
+    return result;
   }
 
   /**
@@ -172,7 +207,9 @@ public class ActivityService {
       throw new BusinessException(CommonResultStatus.PARAM_ERROR, "只有已发布的活动可以开始");
     }
     activity.setStatus(Activity.Status.ONGOING);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    return result;
   }
 
   /**
@@ -186,7 +223,9 @@ public class ActivityService {
       throw new BusinessException(CommonResultStatus.PARAM_ERROR, "只有进行中的活动可以结束");
     }
     activity.setStatus(Activity.Status.ENDED);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    return result;
   }
 
   /**
@@ -201,7 +240,9 @@ public class ActivityService {
     }
     activity.setStatus(Activity.Status.CANCELLED);
     activity.setRejectReason(reason);
-    return activityRepository.save(activity);
+    Activity result = activityRepository.save(activity);
+    activityCache.invalidateAll();
+    return result;
   }
 
   /**
@@ -212,6 +253,7 @@ public class ActivityService {
     Activity activity = findActivity(activityId);
     checkUpdatePermission(activity);
     activityRepository.delete(activity);
+    activityCache.invalidateAll();
   }
 
   /**
@@ -228,5 +270,19 @@ public class ActivityService {
     if (!isAdmin && !isOwner) {
       throw new BusinessException(CommonResultStatus.FORBIDDEN, "没有权限操作此活动");
     }
+  }
+
+  private String getCurrentUsername() {
+    UserinfoDTO currentUser = (UserinfoDTO) SessionItemHolder.getItem(Constants.SESSION_CURRENT_USER);
+    return currentUser != null ? currentUser.username() : "unknown";
+  }
+
+  private String getCurrentIp() {
+    HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+    String ip = request.getHeader("X-Forwarded-For");
+    if (ip == null || ip.isEmpty()) {
+      ip = request.getRemoteAddr();
+    }
+    return ip;
   }
 }

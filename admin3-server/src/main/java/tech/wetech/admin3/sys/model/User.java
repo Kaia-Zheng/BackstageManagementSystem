@@ -21,6 +21,7 @@ public class User extends BaseEntity {
   @Column(nullable = false, unique = true)
   private String username;
 
+  @Column(columnDefinition = "TEXT")
   private String avatar;
 
   @Column

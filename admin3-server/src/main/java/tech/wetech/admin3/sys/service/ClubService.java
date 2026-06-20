@@ -49,7 +49,7 @@ public class ClubService {
   public Club createClub(String name, String description, Club.Category category,
                           LocalDate foundedDate, String avatar, Long ownerId) {
     // 社团名称唯一
-    if (clubRepository.findAll().stream().anyMatch(c -> c.getName().equals(name))) {
+    if (clubRepository.existsByName(name)) {
       throw new BusinessException(CommonResultStatus.PARAM_ERROR, "社团名称已存在");
     }
     Club club = new Club();
@@ -76,9 +76,7 @@ public class ClubService {
     Club club = findClub(clubId);
     if (name != null && !name.equals(club.getName())) {
       // 检查新名称是否冲突
-      boolean conflict = clubRepository.findAll().stream()
-        .anyMatch(c -> !c.getId().equals(clubId) && c.getName().equals(name));
-      if (conflict) {
+      if (clubRepository.existsByNameAndIdNot(name, clubId)) {
         throw new BusinessException(CommonResultStatus.PARAM_ERROR, "社团名称已存在");
       }
       club.setName(name);

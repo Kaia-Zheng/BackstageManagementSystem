@@ -94,11 +94,12 @@ export function deleteClub(clubId: number) {
 }
 
 // 成员管理
-export type MemberRole = 'MEMBER' | 'LEADER';
+export type MemberRole = 'OWNER' | 'VICE' | 'MEMBER';
 
 export const MemberRoleMap: Record<MemberRole, string> = {
-  MEMBER: '成员',
-  LEADER: '管理员'
+  OWNER: '负责人',
+  VICE: '副社长',
+  MEMBER: '普通成员'
 };
 
 export interface ClubMember {

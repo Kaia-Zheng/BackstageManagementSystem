@@ -19,20 +19,21 @@ import java.util.Optional;
 @Repository
 public interface ActivityRegistrationRepository extends JpaRepository<ActivityRegistration, Long> {
 
-  // 使用原生 SQL 查询已报名记录
-  @Query(value = "select * from sys_activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
+  // 使用原生 SQL 查询已报名记录（用于统计报名人数）
+  @Query(value = "select * from activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
   Page<ActivityRegistration> findByActivityId(@Param("activityId") Long activityId, Pageable pageable);
 
-  @Query(value = "select * from sys_activity_registration ar where ar.user_id = :userId and ar.status = 'REGISTERED'", nativeQuery = true)
+  // 查询用户所有报名记录（不区分状态）
+  @Query("from ActivityRegistration ar where ar.user.id = :userId")
   Page<ActivityRegistration> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
   @Query("from ActivityRegistration ar where ar.activity.id = :activityId and ar.user.id = :userId")
   Optional<ActivityRegistration> findByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId);
 
   @Query("from ActivityRegistration ar where ar.activity.id = :activityId and ar.user.id = :userId")
-  Page<ActivityRegistration> findByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId, Pageable pageable);
+  Page<ActivityRegistration> findPageByActivityIdAndUserId(@Param("activityId") Long activityId, @Param("userId") Long userId, Pageable pageable);
 
-  @Query(value = "select count(*) from sys_activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
+  @Query(value = "select count(*) from activity_registration ar where ar.activity_id = :activityId and ar.status = 'REGISTERED'", nativeQuery = true)
   long countByActivityId(@Param("activityId") Long activityId);
 
   @Modifying

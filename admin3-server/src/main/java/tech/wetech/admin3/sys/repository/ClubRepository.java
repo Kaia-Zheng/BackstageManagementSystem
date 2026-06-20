@@ -23,4 +23,8 @@ public interface ClubRepository extends JpaRepository<Club, Long> {
                                @Param("category") Club.Category category,
                                @Param("state") Club.State state,
                                Pageable pageable);
+
+  boolean existsByName(String name);
+
+  boolean existsByNameAndIdNot(String name, Long id);
 }

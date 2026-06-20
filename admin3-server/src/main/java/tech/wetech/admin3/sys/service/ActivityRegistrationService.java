@@ -44,7 +44,7 @@ public class ActivityRegistrationService {
   }
 
   public PageDTO<ActivityRegistration> findByActivity(Long activityId, Pageable pageable) {
-    Page<ActivityRegistration> page = registrationRepository.findByActivityId(activityId, pageable);
+    Page<ActivityRegistration> page = registrationRepository.findAllByActivityId(activityId, pageable);
     return new PageDTO<>(page.getContent(), page.getTotalElements());
   }
 
@@ -106,7 +106,14 @@ public class ActivityRegistrationService {
     }
     ActivityRegistration registration = registrationRepository.findByActivityIdAndUserId(activityId, currentUser.userId())
       .orElseThrow(() -> new BusinessException(CommonResultStatus.RECORD_NOT_EXIST, "您还未报名此活动"));
-    registrationRepository.delete(registration);
+    if (registration.getStatus() == ActivityRegistration.RegisterStatus.CANCELLED) {
+      throw new BusinessException(CommonResultStatus.PARAM_ERROR, "报名已取消");
+    }
+    if (registration.getStatus() == ActivityRegistration.RegisterStatus.CHECKED_IN) {
+      throw new BusinessException(CommonResultStatus.PARAM_ERROR, "已签到的报名无法取消");
+    }
+    registration.setStatus(ActivityRegistration.RegisterStatus.CANCELLED);
+    registrationRepository.save(registration);
     // 更新活动当前报名人数
     Activity activity = activityRepository.findById(activityId).orElseThrow();
     activity.setCurrentParticipants((int) registrationRepository.countByActivityId(activityId));

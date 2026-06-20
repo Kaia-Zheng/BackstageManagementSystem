@@ -21,13 +21,13 @@
       </el-table-column>
       <el-table-column label="角色" width="100" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.role === 'LEADER' ? 'warning' : 'info'">{{ MemberRoleMap[row.role as MemberRole] }}</el-tag>
+          <el-tag :type="row.role === 'OWNER' ? 'danger' : row.role === 'VICE' ? 'warning' : 'info'">{{ MemberRoleMap[row.role as MemberRole] }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link size="small" @click="handleToggleRole(row)" v-action:club:manage>
-            {{ row.role === 'LEADER' ? '设为普通' : '设为管理员' }}
+            {{ row.role === 'MEMBER' ? '设为副社长' : '设为普通成员' }}
           </el-button>
           <el-button type="danger" link size="small" @click="handleRemove(row)" v-action:club:manage>移除</el-button>
         </template>
@@ -188,7 +188,7 @@ const handleRemove = (row: ClubMember) => {
 
 const handleToggleRole = (row: ClubMember) => {
   if (!selectedClubId.value) return;
-  const newRole: MemberRole = row.role === 'LEADER' ? 'MEMBER' : 'LEADER';
+  const newRole: MemberRole = row.role === 'MEMBER' ? 'VICE' : 'MEMBER';
   updateMemberRole(selectedClubId.value, row.user.id, newRole).then(() => {
     ElMessage.success('角色已更新');
     fetchMembers();

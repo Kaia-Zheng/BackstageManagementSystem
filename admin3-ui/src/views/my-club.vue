@@ -58,7 +58,7 @@
               <el-table-column prop="user.username" label="用户名" min-width="120" />
               <el-table-column label="角色" width="100" align="center">
                 <template #default="{ row }">
-                  <el-tag :type="row.role === 'LEADER' ? 'warning' : 'info'" size="small">
+                  <el-tag :type="row.role === 'OWNER' ? 'danger' : row.role === 'VICE' ? 'warning' : 'info'" size="small">
                     {{ MemberRoleMap[row.role as MemberRole] }}
                   </el-tag>
                 </template>
@@ -354,7 +354,7 @@ const handleAddMember = () => {
 
 const handleSetLeader = (row: ClubMember) => {
   if (!club.value) return;
-  updateMemberRole(club.value.id, row.user.id, 'LEADER').then(() => {
+  updateMemberRole(club.value.id, row.user.id, 'VICE').then(() => {
     ElMessage.success('已设为管理员');
     fetchMembers();
   });

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tech.wetech.admin3.sys.model.ClubMember;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -37,4 +38,7 @@ public interface ClubMemberRepository extends JpaRepository<ClubMember, Long> {
   @Query("select case when count(cm) > 0 then true else false end from ClubMember cm " +
     "where cm.club.id = :clubId and cm.user.id = :userId")
   boolean existsByClubIdAndUserId(@Param("clubId") Long clubId, @Param("userId") Long userId);
+
+  @Query("from ClubMember cm where cm.user.id = :userId")
+  java.util.List<ClubMember> findByUserId(@Param("userId") Long userId);
 }

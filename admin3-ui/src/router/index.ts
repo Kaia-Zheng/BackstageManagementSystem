@@ -113,7 +113,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '个人中心',
         },
-        component: () => import(/* webpackChunkName: "user" */ '../views/user.vue'),
+        component: () => import(/* webpackChunkName: "profile" */ '../views/profile.vue'),
       },
     ],
   },

@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 import tech.wetech.admin3.sys.model.Activity;
 import tech.wetech.admin3.sys.model.Activity.Status;
 
+import java.util.List;
+
 /**
  * 活动 Repository
  *
@@ -24,4 +26,10 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
                                    @Param("status") Status status,
                                    @Param("clubId") Long clubId,
                                    Pageable pageable);
+
+  @Query("select count(a) from Activity a where a.status = :status and a.creator.id = :userId")
+  long countByStatusAndCreatorId(@Param("status") Activity.Status status, @Param("userId") Long userId);
+
+  @Query("from Activity a where a.creator.id = :userId order by a.createdTime desc")
+  java.util.List<Activity> findByCreatorId(@Param("userId") Long userId);
 }

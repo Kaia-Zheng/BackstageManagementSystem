@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tech.wetech.admin3.sys.model.ActivityRegistration;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -42,4 +43,7 @@ public interface ActivityRegistrationRepository extends JpaRepository<ActivityRe
 
   // 查询某个活动的所有报名记录（不区分状态）
   Page<ActivityRegistration> findAllByActivityId(Long activityId, Pageable pageable);
+
+  @Query("from ActivityRegistration ar where ar.user.id = :userId")
+  java.util.List<ActivityRegistration> findAllByUserId(@Param("userId") Long userId);
 }
